@@ -5,4 +5,5 @@ const weatherController = new WeatherController();
 
 export default (router: Router) => {
     router.get("/weather/evolution", weatherController.getEvolution);
+    router.get("/weather/infos", weatherController.getDeviceInfos);
 }

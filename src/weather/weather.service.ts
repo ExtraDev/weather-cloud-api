@@ -39,19 +39,19 @@ const variablesName = new Map<number, string>([
     [901, 'rain'],
 ]);
 
-
 export class WeatherService {
+    private browser: Browser | undefined;
+
     public async getEvolution(deviceId: string, variablesToFetch: Array<number>, requestedPeriod: string) {
-        const url = 'https://app.weathercloud.net/d1635490010#evolution';
+        const url = `https://app.weathercloud.net/d${deviceId}#evolution`;
         const evolutions = new Array<Evolution>();
-        let browser: Browser | undefined;
 
         try {
-            browser = await chromium.launch({
+            this.browser = await chromium.launch({
                 channel: 'chrome',
                 headless: true,
             });
-            const page = await browser.newPage();
+            const page = await this.browser.newPage();
 
             const requestPromise = page.waitForRequest(async request => {
                 if (request.method() !== 'POST') return false;
@@ -130,12 +130,84 @@ export class WeatherService {
             console.error(`Impossible de récupérer les données depuis ${url}:`, error);
             throw new Error("Impossible de récupérer les données WeatherCloud.");
         } finally {
-            await browser?.close();
+            await this.browser?.close();
         }
 
         return evolutions;
     }
 
-    public async getDeviceInfos() {
+    /**
+     * Description: Get data and populate DB for register devices
+     */
+    public async getDeviceInfos(deviceId: string): Promise<Infos> {
+        const mapUrl = 'https://app.weathercloud.net/map';
+        const requestUrl = `https://app.weathercloud.net/device/info/${deviceId}`;
+        let browser: Browser | undefined;
+        console.log('go');
+        try {
+            browser = await chromium.launch({
+                channel: 'chrome',
+                headless: true,
+            });
+
+            const page = await browser.newPage();
+            await page.goto(mapUrl, {
+                waitUntil: 'domcontentloaded'
+            });
+
+            const { status, text } = await page.evaluate(async (url) => {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'include',
+                });
+                return { status: response.status, text: await response.text() };
+            }, requestUrl);
+
+            if (status !== 200) {
+                throw new Error(`La requête WeatherCloud a échoué (status ${status}): ${text}`);
+            }
+
+            const res = JSON.parse(text) as Infos;
+            console.log(new Date(), res);
+
+            return res;
+        } catch (error) {
+            console.error(`Impossible de récupérer les informations du device ${deviceId}:`, error);
+            throw new Error('Impossible de récupérer les informations WeatherCloud.');
+        } finally {
+            await browser?.close();
+        }
     }
+
+}
+
+export interface Device {
+    account: number;
+    status: string;
+    city: string;
+    image: string | null;
+    isWebcam: boolean;
+    favorite: boolean;
+    social: boolean;
+    altitude: string;
+    update: number;
+}
+
+export interface InfoValues {
+    temp: string;
+    hum: string;
+    dew: string;
+    wspdavg: string;
+    wdiravg: string;
+    bar: string;
+    rain: string;
+    rainrate: string;
+    solarrad: string;
+    uvi: string;
+}
+
+export interface Infos {
+    device: Device;
+    values: InfoValues;
 }
