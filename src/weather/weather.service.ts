@@ -1,34 +1,6 @@
+import { differenceInHours } from 'date-fns';
 import { chromium, type Browser } from 'playwright';
-
-export interface Evolution {
-    name: string;
-    min: number;
-    max: number;
-    measures: Array<Measure>;
-}
-
-export interface Measure {
-    min: number;
-    max: number;
-    date: Date;
-}
-
-interface ValueStats {
-    sum: number;
-    min: number;
-    min_time: number;
-    max: number;
-    max_time: number;
-}
-
-interface ValueWithStats {
-    stats: ValueStats;
-}
-
-interface WeatherCloudData {
-    summary: Record<string, Pick<ValueStats, 'min' | 'max'>>;
-    values: Record<string, Record<string, ValueWithStats>>;
-}
+import { DeviceValues, Evolution, EvolutionStore, Measure, WeatherCloudData } from './weather.model';
 
 const variablesName = new Map<number, string>([
     [101, 'temperature'],
@@ -41,12 +13,22 @@ const variablesName = new Map<number, string>([
 
 export class WeatherService {
     private browser: Browser | undefined;
+    private evolutionsCache = new Map<string, EvolutionStore>(); // hash, time and data
 
-    public async getEvolution(deviceId: string, variablesToFetch: Array<number>, requestedPeriod: string) {
+    public async getEvolution(deviceId: string, variablesToFetch: Array<number>, requestedPeriod: string): Promise<Array<Evolution>> {
         const url = `https://app.weathercloud.net/d${deviceId}#evolution`;
         const evolutions = new Array<Evolution>();
+        const key = `${deviceId}-${variablesToFetch.join("")}-${requestedPeriod}`;
 
         try {
+            const cachedData = this.evolutionsCache.get(key);
+            if (cachedData) {
+                // check timing > 60 minutes
+                if (differenceInHours(new Date(cachedData.timestamp), new Date()) > 1) {
+                    return cachedData.evolutions;
+                }
+            }
+
             this.browser = await chromium.launch({
                 channel: 'chrome',
                 headless: true,
@@ -133,17 +115,24 @@ export class WeatherService {
             await this.browser?.close();
         }
 
+        const evolutionsStore: EvolutionStore = {
+            timestamp: Date.now(),
+            evolutions
+        }
+
+        this.evolutionsCache.set(key, evolutionsStore);
+
         return evolutions;
     }
 
     /**
      * Description: Get data and populate DB for register devices
      */
-    public async getDeviceInfos(deviceId: string): Promise<Infos> {
+    public async getDeviceInfos(deviceId: string): Promise<DeviceValues> {
         const mapUrl = 'https://app.weathercloud.net/map';
         const requestUrl = `https://app.weathercloud.net/device/info/${deviceId}`;
         let browser: Browser | undefined;
-        console.log('go');
+
         try {
             browser = await chromium.launch({
                 channel: 'chrome',
@@ -168,8 +157,8 @@ export class WeatherService {
                 throw new Error(`La requête WeatherCloud a échoué (status ${status}): ${text}`);
             }
 
-            const res = JSON.parse(text) as Infos;
-            console.log(new Date(), res);
+            const res = JSON.parse(text) as DeviceValues;
+            console.log(new Date(Date.now()), res);
 
             return res;
         } catch (error) {
@@ -179,35 +168,4 @@ export class WeatherService {
             await browser?.close();
         }
     }
-
-}
-
-export interface Device {
-    account: number;
-    status: string;
-    city: string;
-    image: string | null;
-    isWebcam: boolean;
-    favorite: boolean;
-    social: boolean;
-    altitude: string;
-    update: number;
-}
-
-export interface InfoValues {
-    temp: string;
-    hum: string;
-    dew: string;
-    wspdavg: string;
-    wdiravg: string;
-    bar: string;
-    rain: string;
-    rainrate: string;
-    solarrad: string;
-    uvi: string;
-}
-
-export interface Infos {
-    device: Device;
-    values: InfoValues;
 }
