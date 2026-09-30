@@ -6,6 +6,8 @@ export class WeatherController {
     private weatherService = new WeatherService();
 
     public constructor() {
+        this.weatherService.getDeviceInfos('1635490010');
+
         CronJob.from({
             cronTime: '10 */5 * * * *',// toutes les 5 minutes et 10 secondes
             onTick: () => {

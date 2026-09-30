@@ -1,6 +1,8 @@
 import { differenceInHours } from 'date-fns';
 import { chromium, type Browser } from 'playwright';
-import { DeviceValues, Evolution, EvolutionStore, Measure, WeatherCloudData } from './weather.model';
+import { Evolution, EvolutionStore, Measure, WeatherCloudData } from './weather.model';
+import { WeatherRepository } from './weather.repository';
+import { DeviceValues, DeviceValuesSchema } from './weather.schema';
 
 const variablesName = new Map<number, string>([
     [101, 'temperature'],
@@ -12,6 +14,7 @@ const variablesName = new Map<number, string>([
 ]);
 
 export class WeatherService {
+    private weatherRepository = new WeatherRepository();
     private browser: Browser | undefined;
     private evolutionsCache = new Map<string, EvolutionStore>(); // hash, time and data
 
@@ -93,13 +96,15 @@ export class WeatherService {
                         const stats = values[variable.toString()]?.stats;
                         if (!stats) return [];
 
-                        return [{
+                        const measure: Measure = {
                             min: stats.min,
                             max: stats.max,
-                            date: new Date(Number(timestamp) * 1000),
-                        }];
+                            timestamp: +timestamp,
+                        }
+
+                        return [measure];
                     })
-                    .sort((a, b) => a.date.getTime() - b.date.getTime());
+                    .sort((a, b) => a.timestamp - b.timestamp);
 
                 evolutions.push({
                     name: variablesName.get(variable) || 'unknown',
@@ -157,7 +162,10 @@ export class WeatherService {
                 throw new Error(`La requête WeatherCloud a échoué (status ${status}): ${text}`);
             }
 
-            const res = JSON.parse(text) as DeviceValues;
+            const res = DeviceValuesSchema.parse(JSON.parse(text));
+
+            this.weatherRepository.saveDeviceValues(deviceId, res);
+
             console.log(new Date(Date.now()), res);
 
             return res;

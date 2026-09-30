@@ -3,7 +3,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { Router } from "express";
 import { createServer } from "http";
+import { initDatabase } from "./common/database/init-database";
 import weatherRoutes from "./weather/weather.routes";
+
+/* ======================== */
+initDatabase();
 
 dotenv.config();
 
