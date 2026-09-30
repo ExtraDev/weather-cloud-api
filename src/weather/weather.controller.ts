@@ -6,12 +6,20 @@ export class WeatherController {
     private weatherService = new WeatherService();
 
     public constructor() {
-        this.weatherService.getDeviceInfos('1635490010');
+        try {
+            this.weatherService.getDeviceInfos('1635490010')
+        } catch (error) {
+            console.error('Échec de la récupération initiale des données météo:', error);
+        }
 
         CronJob.from({
             cronTime: '10 */5 * * * *',// toutes les 5 minutes et 10 secondes
-            onTick: () => {
-                this.weatherService.getDeviceInfos('1635490010');
+            onTick: async () => {
+                try {
+                    await this.weatherService.getDeviceInfos('1635490010');
+                } catch (error) {
+                    console.error('Échec de la tâche cron météo:', error);
+                }
             },
             start: true,
             timeZone: 'Europe/Zurich',

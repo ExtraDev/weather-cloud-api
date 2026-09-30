@@ -33,7 +33,6 @@ export class WeatherService {
             }
 
             this.browser = await chromium.launch({
-                channel: 'chrome',
                 headless: true,
             });
             const page = await this.browser.newPage();
@@ -140,7 +139,6 @@ export class WeatherService {
 
         try {
             browser = await chromium.launch({
-                channel: 'chrome',
                 headless: true,
             });
 

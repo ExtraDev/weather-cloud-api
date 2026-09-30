@@ -9,7 +9,8 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "tsx src/index.ts",
-        "dev": "nodemon --watch 'src/**/*.ts' --exec 'tsx' src/index.ts"
+        "dev": "nodemon --watch 'src/**/*.ts' --exec 'tsx' src/index.ts",
+        "build": "npx tsc"
     },
     "dependencies": {
         "better-sqlite3": "^13.0.3",
