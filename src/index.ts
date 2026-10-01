@@ -1,15 +1,9 @@
 import bodyParser from "body-parser";
 import cors from 'cors';
-import dotenv from 'dotenv';
 import express, { Request, Response, Router } from "express";
 import { createServer } from "http";
 import { initDatabase } from "./common/database/init-database";
 import weatherRoutes from "./weather/weather.routes";
-
-/* ======================== */
-initDatabase();
-
-dotenv.config();
 
 const app = express();
 
@@ -32,6 +26,12 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 const httpServer = createServer(app);
-httpServer.listen(8080, () => {
-    console.log(`Server is running on 8080`);
+
+initDatabase().then(() => {
+    httpServer.listen(8080, () => {
+        console.log(`Server is running on 8080`);
+    });
+}).catch(error => {
+    console.error('Impossible d’initialiser la base libSQL:', error);
+    process.exitCode = 1;
 });

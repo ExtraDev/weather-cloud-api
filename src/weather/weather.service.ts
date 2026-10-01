@@ -162,7 +162,7 @@ export class WeatherService {
 
             const res = DeviceValuesSchema.parse(JSON.parse(text));
 
-            this.weatherRepository.saveDeviceValues(deviceId, res);
+            await this.weatherRepository.saveDeviceValues(deviceId, res);
 
             console.log(new Date(Date.now()), res);
 

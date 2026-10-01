@@ -2,7 +2,7 @@ import { db } from "../common/database/database";
 import { DeviceValues } from "./weather.schema";
 
 export class WeatherRepository {
-    public saveDeviceValues(deviceId: string, deviceValues: DeviceValues): boolean {
+    public async saveDeviceValues(deviceId: string, deviceValues: DeviceValues): Promise<boolean> {
         const toNumber = (value: string): number => {
             const number = Number(value);
             if (!Number.isFinite(number)) {
@@ -11,7 +11,8 @@ export class WeatherRepository {
             return number;
         };
 
-        const result = db.prepare(`
+        const result = await db.execute({
+            sql: `
             INSERT INTO device_infos (
                 deviceId,
                 timestamp,
@@ -25,35 +26,24 @@ export class WeatherRepository {
                 rainrate,
                 solarrad,
                 uvi
-            ) VALUES (
-                @deviceId,
-                @timestamp,
-                @temp,
-                @hum,
-                @dew,
-                @wspdavg,
-                @wdiravg,
-                @bar,
-                @rain,
-                @rainrate,
-                @solarrad,
-                @uvi
-            )
-        `).run({
-            deviceId,
-            timestamp: Date.now(),
-            temp: toNumber(deviceValues.values.temp),
-            hum: toNumber(deviceValues.values.hum),
-            dew: toNumber(deviceValues.values.dew),
-            wspdavg: toNumber(deviceValues.values.wspdavg),
-            wdiravg: toNumber(deviceValues.values.wdiravg),
-            bar: toNumber(deviceValues.values.bar),
-            rain: toNumber(deviceValues.values.rain),
-            rainrate: toNumber(deviceValues.values.rainrate),
-            solarrad: toNumber(deviceValues.values.solarrad),
-            uvi: toNumber(deviceValues.values.uvi),
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            args: [
+                deviceId,
+                Date.now(),
+                toNumber(deviceValues.values.temp),
+                toNumber(deviceValues.values.hum),
+                toNumber(deviceValues.values.dew),
+                toNumber(deviceValues.values.wspdavg),
+                toNumber(deviceValues.values.wdiravg),
+                toNumber(deviceValues.values.bar),
+                toNumber(deviceValues.values.rain),
+                toNumber(deviceValues.values.rainrate),
+                toNumber(deviceValues.values.solarrad),
+                toNumber(deviceValues.values.uvi),
+            ],
         });
 
-        return result.changes === 1;
+        return Number(result.rowsAffected) === 1;
     }
 }
