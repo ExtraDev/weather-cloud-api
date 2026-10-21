@@ -1,4 +1,4 @@
-import { differenceInHours } from 'date-fns';
+import { differenceInMinutes } from 'date-fns';
 import { chromium, type Browser } from 'playwright';
 import { Evolution, EvolutionStore, Measure, WeatherCloudData } from './weather.model';
 import { WeatherRepository } from './weather.repository';
@@ -25,9 +25,11 @@ export class WeatherService {
 
         try {
             const cachedData = this.evolutionsCache.get(key);
+
             if (cachedData) {
-                // check timing > 60 minutes
-                if (differenceInHours(new Date(cachedData.timestamp), new Date()) > 1) {
+                // check timing > 15 minutes
+                if (differenceInMinutes(new Date(), new Date(cachedData.timestamp)) < 15) {
+                    console.log('return from cach');
                     return cachedData.evolutions;
                 }
             }
@@ -98,6 +100,7 @@ export class WeatherService {
                         const measure: Measure = {
                             min: stats.min,
                             max: stats.max,
+                            total: stats?.total || null,
                             timestamp: +timestamp,
                         }
 
@@ -105,10 +108,15 @@ export class WeatherService {
                     })
                     .sort((a, b) => a.timestamp - b.timestamp);
 
+                const max = summary.max != null && typeof summary.max === 'object'
+                    ? (summary.max as { value: number | null }).value
+                    : summary.max;
+
                 evolutions.push({
-                    name: variablesName.get(variable) || 'unknown',
-                    min: summary.min,
-                    max: summary.max,
+                    name: variablesName.get(variable) || 'unknown' || null,
+                    min: summary?.min || null,
+                    max: max,
+                    total: summary?.total || null,
                     measures,
                 });
             }

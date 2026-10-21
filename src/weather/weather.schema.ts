@@ -11,7 +11,6 @@ export const DeviceSchema = z.object({
     altitude: z.string(),
     update: z.number(),
 });
-
 export type Device = z.infer<typeof DeviceSchema>;
 
 export const InfoValuesSchema = z.object({
@@ -26,12 +25,10 @@ export const InfoValuesSchema = z.object({
     solarrad: z.string(),
     uvi: z.string(),
 });
-
 export type InfoValues = z.infer<typeof InfoValuesSchema>;
 
 export const DeviceValuesSchema = z.object({
     device: DeviceSchema,
     values: InfoValuesSchema,
 });
-
 export type DeviceValues = z.infer<typeof DeviceValuesSchema>;
