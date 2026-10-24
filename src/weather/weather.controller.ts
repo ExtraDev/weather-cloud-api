@@ -1,4 +1,3 @@
-import { CronJob } from "cron";
 import { Request, Response } from "express";
 import { WeatherService } from "./weather.service";
 
@@ -10,18 +9,18 @@ export class WeatherController {
             console.error('Échec de la récupération initiale des données météo:', error);
         });
 
-        CronJob.from({
-            cronTime: '10 */5 * * * *',// toutes les 5 minutes et 10 secondes
-            onTick: async () => {
-                try {
-                    await this.weatherService.getDeviceInfos('1635490010');
-                } catch (error) {
-                    console.error('Échec de la tâche cron météo:', error);
-                }
-            },
-            start: true,
-            timeZone: 'Europe/Zurich',
-        });
+        // CronJob.from({
+        //     cronTime: '10 */5 * * * *',// toutes les 5 minutes et 10 secondes
+        //     onTick: async () => {
+        //         try {
+        //             await this.weatherService.getDeviceInfos('1635490010');
+        //         } catch (error) {
+        //             console.error('Échec de la tâche cron météo:', error);
+        //         }
+        //     },
+        //     start: true,
+        //     timeZone: 'Europe/Zurich',
+        // });
     }
 
     public getEvolution = async (req: Request, res: Response): Promise<void> => {

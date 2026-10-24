@@ -1,5 +1,5 @@
-import { differenceInMinutes } from 'date-fns';
 import { chromium, type Browser } from 'playwright';
+import { Cache } from '../common/helpers/cach.helper';
 import { Evolution, EvolutionStore, Measure, WeatherCloudData } from './weather.model';
 import { WeatherRepository } from './weather.repository';
 import { DeviceValues, DeviceValuesSchema } from './weather.schema';
@@ -16,24 +16,20 @@ const variablesName = new Map<number, string>([
 export class WeatherService {
     private weatherRepository = new WeatherRepository();
     private browser: Browser | undefined;
-    private evolutionsCache = new Map<string, EvolutionStore>(); // hash, time and data
+    private cache = new Cache();
 
     public async getEvolution(deviceId: string, variablesToFetch: Array<number>, requestedPeriod: string): Promise<Array<Evolution>> {
         const url = `https://app.weathercloud.net/d${deviceId}#evolution`;
         const evolutions = new Array<Evolution>();
-        const key = `${deviceId}-${variablesToFetch.join("")}-${requestedPeriod}`;
+        const key = `evolution-${deviceId}-${variablesToFetch.join("")}-${requestedPeriod}`;
+
+        const cachedData = this.cache.get<Array<Evolution>>(key);
+        if (cachedData) {
+            console.log("Retreive from cache");
+            return cachedData;
+        }
 
         try {
-            const cachedData = this.evolutionsCache.get(key);
-
-            if (cachedData) {
-                // check timing > 15 minutes
-                if (differenceInMinutes(new Date(), new Date(cachedData.timestamp)) < 15) {
-                    console.log('return from cach');
-                    return cachedData.evolutions;
-                }
-            }
-
             this.browser = await chromium.launch({
                 headless: true,
             });
@@ -120,6 +116,14 @@ export class WeatherService {
                     measures,
                 });
             }
+
+            const evolutionsStore: EvolutionStore = {
+                timestamp: Date.now(),
+                evolutions
+            }
+
+            this.cache.set(key, evolutionsStore, 15);
+
         } catch (error) {
             console.error(`Impossible de récupérer les données depuis ${url}:`, error);
             throw new Error("Impossible de récupérer les données WeatherCloud.");
@@ -127,22 +131,24 @@ export class WeatherService {
             await this.browser?.close();
         }
 
-        const evolutionsStore: EvolutionStore = {
-            timestamp: Date.now(),
-            evolutions
-        }
-
-        this.evolutionsCache.set(key, evolutionsStore);
-
         return evolutions;
     }
 
     /**
      * Description: Get data and populate DB for register devices
      */
-    public async getDeviceInfos(deviceId: string): Promise<DeviceValues> {
+    public async getDeviceInfos(deviceId: string, saveInDb = false): Promise<DeviceValues> {
+        const key = `infos-${deviceId}`;
+
+        const cachedData = this.cache.get<DeviceValues>(key);
+        if (cachedData) {
+            console.log("Retreive from cache");
+            return cachedData
+        }
+
         const mapUrl = 'https://app.weathercloud.net/map';
         const requestUrl = `https://app.weathercloud.net/device/info/${deviceId}`;
+        let res: DeviceValues;
         let browser: Browser | undefined;
 
         try {
@@ -168,18 +174,19 @@ export class WeatherService {
                 throw new Error(`La requête WeatherCloud a échoué (status ${status}): ${text}`);
             }
 
-            const res = DeviceValuesSchema.parse(JSON.parse(text));
+            res = DeviceValuesSchema.parse(JSON.parse(text));
+            this.cache.set<DeviceValues>(key, res, 5);
 
-            await this.weatherRepository.saveDeviceValues(deviceId, res);
-
-            console.log(new Date(Date.now()), res);
-
-            return res;
+            if (saveInDb) {
+                await this.weatherRepository.saveDeviceValues(deviceId, res);
+            }
         } catch (error) {
             console.error(`Impossible de récupérer les informations du device ${deviceId}:`, error);
             throw new Error('Impossible de récupérer les informations WeatherCloud.');
         } finally {
             await browser?.close();
         }
+
+        return res;
     }
 }
