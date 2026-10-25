@@ -10,6 +10,7 @@ const app = express();
 const corsOptions: cors.CorsOptions = {
     origin: [
         'http://localhost:4200',
+        'https://weather.izma.ch',
     ]
 };
 

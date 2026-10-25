@@ -15,7 +15,6 @@ const variablesName = new Map<number, string>([
 
 export class WeatherService {
     private weatherRepository = new WeatherRepository();
-    private browser: Browser | undefined;
     private cache = new Cache();
 
     public async getEvolution(deviceId: string, variablesToFetch: Array<number>, requestedPeriod: string): Promise<Array<Evolution>> {
@@ -23,6 +22,7 @@ export class WeatherService {
         const evolutions = new Array<Evolution>();
         const key = `evolution-${deviceId}-${variablesToFetch.join("")}-${requestedPeriod}`;
 
+        let browser: Browser | undefined;
         const cachedData = this.cache.get<Array<Evolution>>(key);
         if (cachedData) {
             console.log("Retreive from cache");
@@ -30,10 +30,10 @@ export class WeatherService {
         }
 
         try {
-            this.browser = await chromium.launch({
+            browser = await chromium.launch({
                 headless: true,
             });
-            const page = await this.browser.newPage();
+            const page = await browser.newPage();
 
             const requestPromise = page.waitForRequest(async request => {
                 if (request.method() !== 'POST') return false;
@@ -122,13 +122,13 @@ export class WeatherService {
                 evolutions
             }
 
-            this.cache.set(key, evolutionsStore, 15);
+            this.cache.set(key, evolutions, 15);
 
         } catch (error) {
             console.error(`Impossible de récupérer les données depuis ${url}:`, error);
             throw new Error("Impossible de récupérer les données WeatherCloud.");
         } finally {
-            await this.browser?.close();
+            await browser?.close();
         }
 
         return evolutions;
