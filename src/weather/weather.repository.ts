@@ -1,5 +1,5 @@
 import { db } from "../common/database/database";
-import { DeviceValues } from "./weather.schema";
+import { DeviceValues } from "./models/weather.schema";
 
 export class WeatherRepository {
     public async saveDeviceValues(deviceId: string, deviceValues: DeviceValues): Promise<boolean> {

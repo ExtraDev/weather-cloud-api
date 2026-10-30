@@ -1,8 +1,8 @@
 import { chromium, type Browser } from 'playwright';
-import { Cache } from '../common/helpers/cach.helper';
-import { Evolution, EvolutionStore, Measure, WeatherCloudData } from './weather.model';
+import { Cache } from '../common/helpers/cache.helper';
+import { Evolution, Measure, WeatherCloudData } from './models/weather.model';
+import { DeviceValues, DeviceValuesSchema } from './models/weather.schema';
 import { WeatherRepository } from './weather.repository';
-import { DeviceValues, DeviceValuesSchema } from './weather.schema';
 
 const variablesName = new Map<number, string>([
     [101, 'temperature'],
@@ -115,11 +115,6 @@ export class WeatherService {
                     total: summary?.total || null,
                     measures,
                 });
-            }
-
-            const evolutionsStore: EvolutionStore = {
-                timestamp: Date.now(),
-                evolutions
             }
 
             this.cache.set(key, evolutions, 15);

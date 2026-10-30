@@ -1,9 +1,4 @@
 
-export interface EvolutionStore {
-    timestamp: number;
-    evolutions: Array<Evolution>;
-}
-
 export interface Evolution {
     name: string | null;
     min: number | null;
