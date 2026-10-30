@@ -5,9 +5,9 @@ export class WeatherController {
     private weatherService = new WeatherService();
 
     public constructor() {
-        this.weatherService.getDeviceInfos('1635490010').catch(error => {
-            console.error('Échec de la récupération initiale des données météo:', error);
-        });
+        // this.weatherService.getDeviceInfos('1635490010').catch(error => {
+        //     console.error('Échec de la récupération initiale des données météo:', error);
+        // });
 
         // CronJob.from({
         //     cronTime: '10 */5 * * * *',// toutes les 5 minutes et 10 secondes
@@ -52,7 +52,13 @@ export class WeatherController {
 
     public getDeviceInfos = async (req: Request, res: Response): Promise<void> => {
         try {
-            const infos = await this.weatherService.getDeviceInfos('1635490010');
+            const deviceId = req.query.device;
+            if (typeof deviceId !== 'string') {
+                res.status(400).json({ error: 'le deviceId est required' });
+                return;
+            }
+
+            const infos = await this.weatherService.getDeviceInfos(deviceId);
             res.status(200).json(infos);
         } catch (error) {
             console.error(error);

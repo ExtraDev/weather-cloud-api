@@ -104,9 +104,9 @@ export class WeatherService {
                     })
                     .sort((a, b) => a.timestamp - b.timestamp);
 
-                const max = summary.max != null && typeof summary.max === 'object'
+                const max = summary && summary.max != null && typeof summary.max === 'object'
                     ? (summary.max as { value: number | null }).value
-                    : summary.max;
+                    : summary?.max || null;
 
                 evolutions.push({
                     name: variablesName.get(variable) || 'unknown' || null,

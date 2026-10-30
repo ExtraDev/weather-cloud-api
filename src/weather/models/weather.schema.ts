@@ -7,23 +7,25 @@ export const DeviceSchema = z.object({
     image: z.string().nullable(),
     isWebcam: z.boolean(),
     favorite: z.boolean(),
-    social: z.boolean(),
+    social: z.union([z.boolean(), z.string()]),
     altitude: z.string(),
     update: z.number(),
 });
 export type Device = z.infer<typeof DeviceSchema>;
 
+const weatherValueSchema = z.string().transform(value => value === '-3276.8' || value === '-32768' ? null : value);
+
 export const InfoValuesSchema = z.object({
-    temp: z.string(),
-    hum: z.string(),
-    dew: z.string(),
-    wspdavg: z.string(),
-    wdiravg: z.string(),
-    bar: z.string(),
-    rain: z.string(),
-    rainrate: z.string(),
-    solarrad: z.string(),
-    uvi: z.string(),
+    temp: weatherValueSchema,
+    hum: weatherValueSchema,
+    dew: weatherValueSchema,
+    wspdavg: weatherValueSchema,
+    wdiravg: weatherValueSchema,
+    bar: weatherValueSchema,
+    rain: weatherValueSchema,
+    rainrate: weatherValueSchema,
+    solarrad: weatherValueSchema,
+    uvi: weatherValueSchema,
 });
 export type InfoValues = z.infer<typeof InfoValuesSchema>;
 
