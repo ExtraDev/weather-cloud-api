@@ -93,11 +93,17 @@ export class WeatherService {
                         const stats = values[variable.toString()]?.stats;
                         if (!stats) return [];
 
-                        const measure: Measure = {
+                        let measure: Measure = {
                             min: stats.min,
                             max: stats.max,
                             total: stats?.total || null,
                             timestamp: +timestamp,
+                        }
+
+                        if (variable === 541) { // Wind speed
+                            measure.min = measure.min ? +(measure.min * 3.6).toFixed(2) : null;
+                            measure.max = measure.max ? +(measure.max * 3.6).toFixed(2) : null;
+                            measure.total = measure.total ? +(measure.total * 3.6).toFixed(2) : null;
                         }
 
                         return [measure];
@@ -108,13 +114,21 @@ export class WeatherService {
                     ? (summary.max as { value: number | null }).value
                     : summary?.max || null;
 
-                evolutions.push({
+                let evolution: Evolution = {
                     name: variablesName.get(variable) || 'unknown' || null,
                     min: summary?.min || null,
                     max: max,
                     total: summary?.total || null,
                     measures,
-                });
+                }
+
+                if (variable === 541) { // Wind speed
+                    evolution.min = evolution.min ? +(evolution.min * 3.6).toFixed(2) : null;
+                    evolution.max = evolution.max ? +(evolution.max * 3.6).toFixed(2) : null;
+                    evolution.total = evolution.total ? +(evolution.total * 3.6).toFixed(2) : null;
+                }
+
+                evolutions.push(evolution);
             }
 
             this.cache.set(key, evolutions, 15);
@@ -170,6 +184,8 @@ export class WeatherService {
             }
 
             res = DeviceValuesSchema.parse(JSON.parse(text));
+            res.values.wspdavg = res.values?.wspdavg ? (+res.values.wspdavg * 3.6).toFixed(2) : null;
+
             this.cache.set<DeviceValues>(key, res, 5);
 
             if (saveInDb) {

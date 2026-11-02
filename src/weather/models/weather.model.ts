@@ -8,8 +8,8 @@ export interface Evolution {
 }
 
 export interface Measure {
-    min: number;
-    max: number;
+    min: number | null;
+    max: number | null;
     total: number | null;
     timestamp: number;
 }
