@@ -16,16 +16,16 @@ export type Device = z.infer<typeof DeviceSchema>;
 const weatherValueSchema = z.string().transform(value => value === '-3276.8' || value === '-32768' ? null : value);
 
 export const InfoValuesSchema = z.object({
-    temp: weatherValueSchema,
-    hum: weatherValueSchema,
-    dew: weatherValueSchema,
-    wspdavg: weatherValueSchema,
-    wdiravg: weatherValueSchema,
-    bar: weatherValueSchema,
-    rain: weatherValueSchema,
-    rainrate: weatherValueSchema,
-    solarrad: weatherValueSchema,
-    uvi: weatherValueSchema,
+    temp: weatherValueSchema.optional(),
+    hum: weatherValueSchema.optional(),
+    dew: weatherValueSchema.optional(),
+    wspdavg: weatherValueSchema.optional(),
+    wdiravg: weatherValueSchema.optional(),
+    bar: weatherValueSchema.optional(),
+    rain: weatherValueSchema.optional(),
+    rainrate: weatherValueSchema.optional(),
+    solarrad: weatherValueSchema.optional(),
+    uvi: weatherValueSchema.optional(),
 });
 export type InfoValues = z.infer<typeof InfoValuesSchema>;
 
